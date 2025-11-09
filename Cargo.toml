@@ -20,3 +20,11 @@ chrono = "0.4.42"
 [[example]]
 name = "instrument"
 path = "example/instrument.rs"
+
+[[example]]
+name = "telegram"
+path = "example/telegram.rs"
+
+[[example]]
+name = "ticker"
+path = "example/ticker.rs"

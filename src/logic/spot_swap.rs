@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use log::info;
+use log::{info, warn};
 use bigdecimal::{BigDecimal, FromPrimitive};
 use chrono::Local;
 
 use crate::model::symbol::{Category, Ticker};
-use crate::action::ticker::get_ticker;
+use crate::action::{ticker::get_ticker, telegram::broadcast};
 
 pub async fn spot_swap_arbitrage() {
     let mut spot_swap = SpotSwap::new().await;
@@ -89,12 +89,39 @@ impl SpotSwap {
         diffs.sort_by(|a, b| b.diff_rate.cmp(&a.diff_rate));
 
         if diffs.len() > 0 {
-            println!("========= Spot-Swap Arbitrage Opportunities [{}] ==========", Local::now().format("%Y-%m-%d %H:%M:%S"));
-            for d in diffs.iter() {
-                println!("{}-{} | spot: {} | swap: {} | diff: {} | diff_rate: {:.4}%", 
-                    d.base, d.quote, d.spot_px, d.swap_px, d.diff, d.diff_rate.clone() * BigDecimal::from_f64(100.0).unwrap());
+            let mut msg = format!("📊 **现货-合约套利机会** 📊\n⏰ {}\n", Local::now().format("%m-%d %H:%M:%S"));
+            
+            for (i, d) in diffs.iter().enumerate() {
+                let rate_percent = d.diff_rate.clone() * BigDecimal::from_f64(100.0).unwrap();
+                let emoji = if d.diff_rate > BigDecimal::from_f64(0.0).unwrap() { "📈" } else { "📉" };
+                
+                // 格式化价格显示，保留4位小数
+                let spot_px_formatted = format!("{:.4}", d.spot_px);
+                let swap_px_formatted = format!("{:.4}", d.swap_px);
+                let diff_formatted = format!("{:.4}", d.diff);
+                
+                msg += &format!(
+                    "{} **{}-{}**\n💰 现货: `{}`\n🔄 合约: `{}`\n📊 差价: `{}` ({:.2}%)\n", 
+                    emoji,
+                    d.base, 
+                    d.quote,
+                    spot_px_formatted,
+                    swap_px_formatted, 
+                    diff_formatted,
+                    rate_percent
+                );
+                
+                // 在每个条目之间添加分隔线，除了最后一个
+                if i < diffs.len() - 1 {
+                    msg += "➖➖➖➖➖➖➖➖➖➖\n";
+                }
             }
-            println!("");
+            
+            msg += &format!("\n📝 共发现 {} 个套利机会", diffs.len());
+
+            if !broadcast(&msg).await{
+                warn!("sent telegram message failed:\n{}", msg);
+            }
         }
 
         self.spot = spot;

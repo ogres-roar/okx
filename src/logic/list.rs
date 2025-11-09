@@ -1,6 +1,7 @@
 use crate::action;
 use crate::model::symbol::{Category, Symbol};
 
+use chrono::Local;
 use log::{warn, info};
 
 pub async fn list() {
@@ -50,7 +51,28 @@ impl List {
         }
         let new_spot_symbols = new_symbols(&self.spot, &spot_symbols);
         if new_spot_symbols.len() > 0 {
-            info!("new spot symbols: {:?}", new_spot_symbols);
+            let mut msg = format!("🚀 **OKX新增现货交易对** 🚀\n⏰ {}\n\n", Local::now().format("%m-%d %H:%M:%S"));
+            
+            for (i, sym) in new_spot_symbols.iter().enumerate() {
+                msg += &format!("💰 **{}{}**", sym.base, sym.quote);
+                
+                // 添加序号（如果有多个的话）
+                if new_spot_symbols.len() > 1 {
+                    msg += &format!(" `#{}`", i + 1);
+                }
+                msg += "\n";
+                
+                // 在每个条目之间添加分隔线，除了最后一个
+                if i < new_spot_symbols.len() - 1 {
+                    msg += "➖➖➖➖➖➖➖➖\n";
+                }
+            }
+            
+            msg += &format!("\n📊 共新增 **{}** 个现货交易对", new_spot_symbols.len());
+            
+            if !action::telegram::broadcast(&msg).await {
+                warn!("sent telegram message failed:\n{}", msg);
+            }
         }
         self.spot = spot_symbols;
         let swap_symbols = match action::instrument::get_symbols(Category::Swap).await{
@@ -63,7 +85,28 @@ impl List {
         }
         let new_swap_symbols = new_symbols(&self.swap, &swap_symbols);
         if new_swap_symbols.len() > 0 {
-            info!("new swap symbols: {:?}", new_swap_symbols);
+            let mut msg = format!("⚡ **OKX新增永续交易对** ⚡\n⏰ {}\n\n", Local::now().format("%m-%d %H:%M:%S"));
+            
+            for (i, sym) in new_swap_symbols.iter().enumerate() {
+                msg += &format!("🔄 **{}-{}**", sym.base, sym.quote);
+                
+                // 添加序号（如果有多个的话）
+                if new_swap_symbols.len() > 1 {
+                    msg += &format!(" `#{}`", i + 1);
+                }
+                msg += "\n";
+                
+                // 在每个条目之间添加分隔线，除了最后一个
+                if i < new_swap_symbols.len() - 1 {
+                    msg += "➖➖➖➖➖➖➖➖\n";
+                }
+            }
+            
+            msg += &format!("\n📈 共新增 **{}** 个永续交易对", new_swap_symbols.len());
+            
+            if !action::telegram::broadcast(&msg).await {
+                warn!("sent telegram message failed:\n{}", msg);
+            }
         }
         self.swap = swap_symbols;
     }
