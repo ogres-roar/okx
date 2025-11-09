@@ -1,0 +1,1 @@
+pub static  REST_API_HOST : &str ="https://www.okx.com";

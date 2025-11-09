@@ -3,4 +3,20 @@ name = "okx"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "okx"
+path = "src/lib.rs"
+
 [dependencies]
+serde = { version = "1.0.228" , features = ["derive"] }
+serde_json = "1.0.145"
+reqwest = { version = "0.12.24", features = ["json"] }
+tokio = { version = "1.0", features = ["full"] }
+log4rs = "1.4.0"
+log = "0.4.28"
+bigdecimal = { version = "0.4.9", features = ["serde-json"] }
+chrono = "0.4.42"
+
+[[example]]
+name = "instrument"
+path = "example/instrument.rs"
