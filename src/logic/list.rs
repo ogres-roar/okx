@@ -88,7 +88,7 @@ impl List {
             let mut msg = format!("⚡ **OKX新增永续交易对** ⚡\n⏰ {}\n\n", Local::now().format("%m-%d %H:%M:%S"));
             
             for (i, sym) in new_swap_symbols.iter().enumerate() {
-                msg += &format!("🔄 **{}-{}**", sym.base, sym.quote);
+                msg += &format!("🔄 **{}{}**", sym.base, sym.quote);
                 
                 // 添加序号（如果有多个的话）
                 if new_swap_symbols.len() > 1 {
