@@ -18,6 +18,7 @@ pub async fn spot_swap_arbitrage() {
 struct SpotSwap {
     pub spot:Vec<Ticker>,
     pub swap:Vec<Ticker>,
+    pub diffs:Vec<Diff>,
 }
 
 struct Diff {
@@ -44,6 +45,7 @@ impl SpotSwap {
         SpotSwap {
             spot,
             swap,
+            diffs: Vec::new(),
         }
     }
 
@@ -86,9 +88,8 @@ impl SpotSwap {
             }
         }
 
-        diffs.sort_by(|a, b| b.diff_rate.cmp(&a.diff_rate));
-
-        if diffs.len() > 0 {
+        if new_diff(&self.diffs, &diffs) {
+            diffs.sort_by(|a, b| b.diff_rate.cmp(&a.diff_rate));
             let mut msg = format!("📊 **现货-合约套利机会** 📊\n⏰ {}\n", Local::now().format("%m-%d %H:%M:%S"));
             
             for (i, d) in diffs.iter().enumerate() {
@@ -122,9 +123,29 @@ impl SpotSwap {
             if !broadcast(&msg).await{
                 warn!("sent telegram message failed:\n{}", msg);
             }
+            self.diffs = diffs;
         }
 
         self.spot = spot;
         self.swap = swap;
     }
+}
+
+fn new_diff(old:&Vec<Diff>, new:&Vec<Diff>) -> bool {
+    if old.len() != new.len() {
+        return true;
+    }
+    let new_set: std::collections::HashSet<String> = new.iter().map(|d| format!("{}-{}", d.base, d.quote)).collect();
+    let old_set: std::collections::HashSet<String> = old.iter().map(|d| format!("{}-{}", d.base, d.quote)).collect();
+    for item in new_set.iter() {
+        if !old_set.contains(item) {
+            return true;
+        }
+    }
+    for item in old_set.iter() {
+        if !new_set.contains(item) {
+            return true;
+        }
+    }
+    return false;
 }
