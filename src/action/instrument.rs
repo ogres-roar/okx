@@ -157,7 +157,18 @@ pub async fn get_symbols(category: Category) -> Option<Vec<Symbol>> {
                                 }
                             }).collect())
                         } else if Category::Swap == category || Category::Future == category {
-                            Some(api_response.data.into_iter().map(|inst| {
+                            Some(api_response.data.into_iter().
+                            filter(|inst| {
+                                let inst_family = inst.inst_family.clone();
+                                let inst_family: Vec<&str> = inst_family.split('-').collect();
+
+                                if inst_family.len() < 2{
+                                    eprintln!("invalid inst_family: {}", inst.inst_family);
+                                    return false;
+                                }
+                                true
+                            }).
+                            map(|inst| {
                                 let inst_family = inst.inst_family.clone();
                                 let inst_family: Vec<&str> = inst_family.split('-').collect();
 
