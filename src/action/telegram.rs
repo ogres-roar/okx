@@ -81,7 +81,7 @@ struct ChatInfo {
 
 pub async fn broadcast(text: &String) -> bool {
     let msg = Message {
-        chat_id: -5030115587,
+        chat_id: -1003342269888,
         text: text.clone(),
     };
     let msg = json!(msg);
